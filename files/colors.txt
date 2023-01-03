@@ -1,0 +1,9 @@
+cursor=7
+lines=7
+plus=4
+open_cells=8
+closed_cells=1
+hint_cells=4
+hud_up=4
+hud_down=1
+hud_text=8

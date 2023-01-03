@@ -1,0 +1,2 @@
+default_difficulty=35
+hints_enabled=1
