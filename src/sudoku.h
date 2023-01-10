@@ -45,6 +45,7 @@ typedef struct Board_Colors {
 typedef struct Game {
       char starting_pos[BOARD_SIZE][BOARD_SIZE];
       short board[BOARD_SIZE][BOARD_SIZE];
+      short solved[BOARD_SIZE][BOARD_SIZE];
       short nums_count[BOARD_SIZE];
       short difficulty;
       colors_t colors;

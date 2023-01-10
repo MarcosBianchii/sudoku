@@ -15,7 +15,7 @@ void print_help() {
       }
 
       printf(\
-GREEN"\n> "WHITE"/sudoku "GREEN"[difficulty / command]\n"WHITE\
+GREEN"\n> "WHITE"./sudoku "GREEN"[difficulty / command]\n"WHITE\
 "\n"\
 "Difficulty: "YELLOW"0 TO 80 "BLACK"(default: %i)\n"\
 "\n"\
@@ -118,8 +118,7 @@ bool check_args(int argc, char *argv[]) {
                         if (i + 1 < argc)
                               set_difficulty(atoi(argv[i + 1]));
                         else  throw_err("Must specify difficulty");
-                  else
-                        throw_err("Invalid command");
+                  else throw_err("Invalid command");
 
                   return false;
             }
@@ -159,9 +158,13 @@ bool is_valid(short board[BOARD_SIZE][BOARD_SIZE], int row, int col) {
       return true;
 }
 
-bool solve_sudoku(short board[BOARD_SIZE][BOARD_SIZE], int row, int col) {
-      if (row == BOARD_SIZE - 1 && col == BOARD_SIZE)
+bool solve_sudoku(game_t *game, short board[BOARD_SIZE][BOARD_SIZE], int row, int col) {
+      if (row == BOARD_SIZE - 1 && col == BOARD_SIZE) {
+            for (int i = 0; i < BOARD_SIZE; i++)
+                  for (int j = 0; j < BOARD_SIZE; j++)
+                        game->solved[i][j] = board[i][j];
             return true;
+      }
 
       if (col == BOARD_SIZE) {
             row++;
@@ -169,11 +172,11 @@ bool solve_sudoku(short board[BOARD_SIZE][BOARD_SIZE], int row, int col) {
       }
 
       if (board[row][col] != 0)
-            return solve_sudoku(board, row, col + 1);
+            return solve_sudoku(game, board, row, col + 1);
 
       for (int num = 1; num <= BOARD_SIZE; num++) {
             board[row][col] = num;
-            if (is_valid(board, row, col) && solve_sudoku(board, row, col + 1))
+            if (is_valid(board, row, col) && solve_sudoku(game, board, row, col + 1))
                   return true;
       }
 
@@ -210,7 +213,7 @@ void board_init(game_t *game, short board[BOARD_SIZE][BOARD_SIZE], int difficult
             while (!is_valid(board, x, x));
       }
 
-      if (!solve_sudoku(board, 0, 0))
+      if (!solve_sudoku(game, board, 0, 0))
             board_init(game, board, difficulty);
       
       load_positions(game->starting_pos, board, difficulty);
@@ -467,90 +470,92 @@ bool make_play(game_t *game, int c) {
             if (game->cursor.row < 0)
                   game->cursor.row = BOARD_SIZE-1;
             break;
+      
       case 's': case KEY_DOWN:
             game->cursor.row++;
             if (game->cursor.row >= BOARD_SIZE)
                   game->cursor.row = 0;
             break;
+      
       case 'a': case KEY_LEFT:
             game->cursor.col--;
             if (game->cursor.col < 0)
                   game->cursor.col = BOARD_SIZE-1;
             break;
+      
       case 'd': case KEY_RIGHT:
             game->cursor.col++;
             if (game->cursor.col >= BOARD_SIZE)
                   game->cursor.col = 0;
             break;
+      
       case '1': case '2': case '3':
       case '4': case '5': case '6':
       case '7': case '8': case '9':
-            if (cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col)) {
-                  if (game->board[game->cursor.row][game->cursor.col] != 0)
-                        game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
-                  game->board[game->cursor.row][game->cursor.col] = c - '0';
-                  game->nums_count[c - '0' - 1]++;
-            }
+            if (!cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col))
+                  break;
 
-            break;
-      case '0':
-            if (cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col)) {
+            if (game->board[game->cursor.row][game->cursor.col] != 0)
                   game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
-                  game->board[game->cursor.row][game->cursor.col] = 0;
-            }
-
+            game->board[game->cursor.row][game->cursor.col] = c - '0';
+            game->nums_count[c - '0' - 1]++;
             break;
+      
+      case '0':
+            if (game->board[game->cursor.row][game->cursor.col] == 0
+            || !cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col))
+                  break;
+            
+            game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
+            game->board[game->cursor.row][game->cursor.col] = 0;
+            break;
+      
       case 'e': case '+':
-            if (cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col)) {
-                  if (game->board[game->cursor.row][game->cursor.col] != 0)
-                        game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
-                  game->board[game->cursor.row][game->cursor.col]++;
-                  if (game->board[game->cursor.row][game->cursor.col] >= 10)
-                        game->board[game->cursor.row][game->cursor.col] = 0;
-                  if (game->board[game->cursor.row][game->cursor.col] != 0)
-                        game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]++;
-            }
+            if (!cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col))
+                  break;
 
+            if (game->board[game->cursor.row][game->cursor.col] != 0)
+                  game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
+            game->board[game->cursor.row][game->cursor.col]++;
+            if (game->board[game->cursor.row][game->cursor.col] >= 10)
+                  game->board[game->cursor.row][game->cursor.col] = 0;
+            if (game->board[game->cursor.row][game->cursor.col] != 0)
+                  game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]++;
             break;
+
       case 'q': case '-':
-            if (cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col)) {
-                  if (game->board[game->cursor.row][game->cursor.col] != 0)
-                        game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
-                  game->board[game->cursor.row][game->cursor.col]--;
-                  if (game->board[game->cursor.row][game->cursor.col] <= -1)
-                        game->board[game->cursor.row][game->cursor.col] = 9;
-                  if (game->board[game->cursor.row][game->cursor.col] != 0)
-                        game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]++;
-            }
+            if (!cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col))
+                  break;
 
+            if (game->board[game->cursor.row][game->cursor.col] != 0)
+                  game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]--;
+            game->board[game->cursor.row][game->cursor.col]--;
+            if (game->board[game->cursor.row][game->cursor.col] <= -1)
+                  game->board[game->cursor.row][game->cursor.col] = 9;
+            if (game->board[game->cursor.row][game->cursor.col] != 0)
+                  game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]++;
             break;
+
       case 'f': case '*':
             if (!cell_is_changeable(game->starting_pos, game->cursor.row, game->cursor.col))
                   break;
 
-            int prev_value = game->board[game->cursor.row][game->cursor.col];
-            for (int i = prev_value; i <= 10; i++) {
-                  if (i == 10) {
-                        game->board[game->cursor.row][game->cursor.col] = 0;
-                        break;
-                  }
+            int board_val = game->board[game->cursor.row][game->cursor.col];
+            int solution = game->solved[game->cursor.row][game->cursor.col];
 
-                  game->board[game->cursor.row][game->cursor.col] = i;
-                  if (is_valid(game->board, game->cursor.row, game->cursor.col)) {
-                        if (prev_value != 0)
-                              game->nums_count[prev_value - 1]--;
-
-                       if (i != 0)
-                              game->nums_count[game->board[game->cursor.row][game->cursor.col] - 1]++;
-                        game->board[game->cursor.row][game->cursor.col] = i;
-                        break;
-                  }
+            if (board_val == solution) {
+                  game->board[game->cursor.row][game->cursor.col] = 0;
+                  game->nums_count[solution - 1]--;
+            } else {
+                  game->board[game->cursor.row][game->cursor.col] = solution;
+                  game->nums_count[solution - 1]++;
             }
-
+            
             break;
       case 'h': case KEY_HOME:
             game->hints = !game->hints;
             break;
+
       case 'r': case '.':
             for (int i = 0; i < BOARD_SIZE; i++)
                   for (int j = 0; j < BOARD_SIZE; j++)
@@ -560,6 +565,7 @@ bool make_play(game_t *game, int c) {
                               game->board[i][j] = 0;
                         }
             break;
+
       case 'x': case KEY_END:
             return false;
       }
