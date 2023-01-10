@@ -36,7 +36,7 @@ BLACK"-"WHITE"set"BLACK"-"WHITE"difficulty"BLACK" -> "GREEN"set default difficul
 }
 
 void print_version() {
-      printf(YELLOW"version: 1.1\n"WHITE);
+      printf(YELLOW"version: 1.2\n"WHITE);
 }
 
 void toggle_hints() {
@@ -546,6 +546,10 @@ bool make_play(game_t *game, int c) {
             if (board_val == solution) {
                   game->board[game->cursor.row][game->cursor.col] = 0;
                   game->nums_count[solution - 1]--;
+            } else if (board_val != 0) {
+                  game->nums_count[board_val - 1]--;
+                  game->board[game->cursor.row][game->cursor.col] = solution;
+                  game->nums_count[solution - 1]++;
             } else {
                   game->board[game->cursor.row][game->cursor.col] = solution;
                   game->nums_count[solution - 1]++;
@@ -573,29 +577,45 @@ bool make_play(game_t *game, int c) {
       return true;
 }
 
-void win_screen(game_t game) {
-      game.colors = (colors_t) {
-            .cursor = 3,
-            .lines = 3,
-            .plus = 3,
-            .open_cells = 3,
-            .closed_cells = 3,
-            .hint_cells = 3,
-            .hud_up = 3,
-            .hud_down = 3,
-            .hud_text = 3,
-      };
+int win_screen(game_t *game) {
+      print_board(*game);
+      
+      int x, y;
+      getmaxyx(stdscr, y, x);
+      int starting_y = y/2 + BOARD_SIZE/2 + 1;
+      int starting_x = x/2 - BOARD_SIZE - 2;
 
-      print_board(game);
-      getch();
+      move(starting_y, starting_x);
+      attron(COLOR_PAIR(game->colors.lines)); addch('(');
+      attron(COLOR_PAIR(8) | A_BOLD); addch('N'); attroff(A_BOLD);
+      attron(COLOR_PAIR(game->colors.lines)); addstr(")ew game");
+      
+      move(starting_y, starting_x + 15);
+      addch('(');
+      attron(COLOR_PAIR(8) | A_BOLD); addch('Q'); attroff(A_BOLD);
+      attron(COLOR_PAIR(game->colors.lines)); addstr(")uit");
+
+      while (true) {
+            switch (tolower(getch())) {
+            case 'q': return 0;
+            case 'n':
+                  memset(game->board, 0, sizeof(game->board));
+                  memset(game->nums_count, 0, sizeof(game->nums_count));
+                  memset(game->starting_pos, 0, sizeof(game->starting_pos));
+                  memset(game->solved, 0, sizeof(game->solved));
+                  board_init(game, game->board, game->difficulty);
+                  return 1;
+            }
+      }
 }
 
 void game_loop(game_t *game) {
-      while (!end(*game)) {
-            print_board(*game);
-            if (!make_play(game, getch()))
-                  return;
-      }
-
-      win_screen(*game);
+      do
+            while (!end(*game)) {
+                  print_board(*game);
+                  if (!make_play(game, getch()))
+                        return;
+            }
+      
+      while(win_screen(game));
 }
