@@ -36,7 +36,7 @@ BLACK"-"WHITE"set"BLACK"-"WHITE"difficulty"BLACK" -> "GREEN"set default difficul
 }
 
 void print_version() {
-      printf(YELLOW"version: 1.0\n"WHITE);
+      printf(YELLOW"version: 1.1\n"WHITE);
 }
 
 void toggle_hints() {
