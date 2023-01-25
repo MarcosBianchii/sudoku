@@ -421,7 +421,15 @@ void print_board(game_t game) {
                   }
             }
       }
+}
 
+void print_hud(game_t game) {
+      int x, y;
+      getmaxyx(stdscr, y, x);
+      short hud_x = x/2 - 11;
+      short hud_y = y/2 + 2;
+
+      colors_t colors = game.colors;
       move(hud_y, hud_x);
       for (int i = 0; i < BOARD_SIZE; i++) {
             attron(COLOR_PAIR(colors.hud_up));
@@ -455,8 +463,12 @@ void print_board(game_t game) {
       addstr("SUDOKU             ");
       if (game.difficulty < 10) addch(' ');
       printw("%i", game.difficulty);
+}
 
-      refresh();  
+void print_ui(game_t game) {
+      print_board(game);
+      print_hud(game);
+      refresh();
 }
 
 bool cell_is_changeable(char starting_pos[BOARD_SIZE][BOARD_SIZE], int row, int col) {
@@ -578,11 +590,15 @@ bool make_play(game_t *game, int c) {
 }
 
 int win_screen(game_t *game) {
+      bool hints = game->hints;
+      int cursor_color = game->colors.cursor;
+      game->hints = false;
+      game->colors.cursor = game->colors.open_cells;
       print_board(*game);
       
       int x, y;
       getmaxyx(stdscr, y, x);
-      int starting_y = y/2 + BOARD_SIZE/2 + 1;
+      int starting_y = y/2 + BOARD_SIZE/2 - 2;
       int starting_x = x/2 - BOARD_SIZE - 2;
 
       move(starting_y, starting_x);
@@ -604,6 +620,8 @@ int win_screen(game_t *game) {
                   memset(game->starting_pos, 0, sizeof(game->starting_pos));
                   memset(game->solved, 0, sizeof(game->solved));
                   board_init(game, game->board, game->difficulty);
+                  game->colors.cursor = cursor_color;
+                  game->hints = hints;
                   return 1;
             }
       }
@@ -612,10 +630,10 @@ int win_screen(game_t *game) {
 void game_loop(game_t *game) {
       do
             while (!end(*game)) {
-                  print_board(*game);
+                  print_ui(*game);
                   if (!make_play(game, getch()))
                         return;
             }
       
-      while(win_screen(game));
+      while (win_screen(game));
 }
