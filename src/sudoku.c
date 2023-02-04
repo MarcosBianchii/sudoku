@@ -304,7 +304,7 @@ game_t *game_new(char *difficulty) {
 }
 
 void throw_err(char *text) {
-      printf(RED"ERROR: "WHITE"%s\n", text);
+      fprintf(stderr, RED"ERROR: "WHITE"%s\n", text);
 }
 
 void print_game(game_t game, short board[BOARD_SIZE][BOARD_SIZE], short *nums_count) {
