@@ -8,6 +8,7 @@
 #include <ncurses.h>
 #include <time.h>
 #include <ctype.h>
+#include <math.h>
 
 #define BOARD_SIZE 9
 

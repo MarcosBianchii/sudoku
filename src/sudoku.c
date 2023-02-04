@@ -160,9 +160,7 @@ bool is_valid(short board[BOARD_SIZE][BOARD_SIZE], int row, int col) {
 
 bool solve_sudoku(game_t *game, short board[BOARD_SIZE][BOARD_SIZE], int row, int col) {
       if (row == BOARD_SIZE - 1 && col == BOARD_SIZE) {
-            for (int i = 0; i < BOARD_SIZE; i++)
-                  for (int j = 0; j < BOARD_SIZE; j++)
-                        game->solved[i][j] = board[i][j];
+            memcpy(game->solved, board, pow(BOARD_SIZE, 2) * sizeof(short));
             return true;
       }
 
